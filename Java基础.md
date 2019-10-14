@@ -140,11 +140,56 @@
 
 
 
+### 19. String str = "i" 与String str = new String("i")一样吗？
+
+​	不一样。因为内存的分配方式不一样。String str = "i"的方式，Java虚拟机会将其分配到常量池中；而String str = new String("i")则会被分到堆内存中。
+​	
+
+```java
+public class StringTest {
+    public static void main(String[] args) {
+        String str1 = "abc";
+        String str2 = "abc";
+        String str3 = new String("abc");
+        String str4 = new String("abc");
+        
+        System.out.println(str1 == str2); //true
+        System.out.println(str1 == str3); //false
+        System.out.println(str3 == str4); //false
+        System.out.println(str3.equals(str4)); //true
+    }
+}
+```
+
+​	在执行String str1 = "abc"的时候，JVM会首先检查字符串常量池中是否已经存在该字符串对象，如果已经存在，那么就不会再创建了，直接返回该字符串在字符串常量池中的内存地址。如果不存在，则在字符串常量池创建返回。所以String str2 = "abc"直接返回内存地址。 栈内存中str1与str2的内存地址都指向“abc”在字符串常量池中的位置，所以为true。
+
+​	而在执行 String  str3 = new  String("abc") 的时候，JVM 会首先检查字符串常量池中是否已经存在“abc”字符串，如果已经存在，则不会在字符串常量池中再创建了；如果不存在，则就会在字符串常量池中创建 "abc" 字符串对象，然后再到堆内存中再创建一份字符串对象，把字符串常量池中的 "abc" 字符串内容拷贝到内存中的字符串对象中，然后返回堆内存中该字符串的内存地址，即栈内存中存储的地址是堆内存中对象的内存地址。在内存中的存储状况如图所示：
 
 
 
+### 20.String类的常用方法都有那些？
 
+indexOf():返回指定字符的索引。
 
+charAt()：返回指定索引处的字符。
+
+replace()：字符串替换。
+
+trim()：去除字符串两端空白。
+
+split()：分割字符串，返回一个分割后的字符串数组。
+
+getBeytes()：返回字符串的byte类型数组。
+
+length()：返回字符串长度。	
+
+toLowerCase()：将字符串转成小写字母。
+
+toUpperCase()：将字符串转成大写字符。
+
+substring()：截取字符串。
+
+equals()：字符串比较。
 
 
 
