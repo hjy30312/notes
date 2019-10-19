@@ -191,9 +191,101 @@ substring()：截取字符串。
 
 equals()：字符串比较。
 
+### 21.final修饰StringBuffer后还可以append吗？
+
+​	可以。final修饰的是一个引用变量，那么这个引用始终只能指向这个对象，但是这个对象内部的属性是可以变化的。
+
+### 22.为什么wait/notify方法放在Object类中而不是Thread类中？
+
+notify 方法：唤醒一个在此对象监视器上等待的线程。如果有多个线程在等待只会唤醒一个。
+
+notifyAll 方法：作用跟 notify() 一样，只不过会唤醒在此对象监视器上等待的所有线程，而不是一个线程。
+
+一个很明显的原因是 Java 提供的锁是对象级的而不是线程级的，每个对象都有锁，通过线程获得。
+
+### 23.final、finally、finalize的区别？
+
+final：用于声明属性、方法和类，分别表示属性不可变、方法不可覆盖、被其修饰的类不可基础；
+
+finally：异常处理语句结构的一部分，表示总是执行。
+
+finallize：Object类的一个方法，在垃圾回收时会调用被回收对象的finalize。
+
+### 24.finally块中的代码什么时候被执行？
+
+finally块里的代码在return之前执行的。如果try-finally中都有return，最终调用finally中return的值。
+
+### 25.==和equals的区别？
+
+==：用来比较的对象是基本数据类型，则比较值；如果是引用数据类型，则比较地址。
+
+equals：用来比较两个对象的内容是否相等。没重写比较地址。不可比较基本数据类型。
+
+### 26.为什么重写 equals() 就一定要重写 hashCode() 方法？
+
+​	字段属性值完全相同的两个对象因为hashCode不同，所以在hashmap中的table数组的下标不同，从而这两个对象就会同时存在于集合中，所以重写equals()就一定要重写hashCode()方法。同理 如果仅仅重写了hashCode()，而没有重写equals（）方法 在hashmap中的table数组的下标相同  但是没有重写equals()方法导致认为不是一个key不会覆盖,将会形成一个链表。
+
+Set为例子：
+
+```java
+public class A {
+    @Override
+    public boolean equals(Object obj) {
+        return true;
+    }
+}
+public class B {
+    @Override
+    public int hashCode() {
+        return 1;
+    }
+}
+public class C {
+    @Override
+    public int hashCode() {
+        return 2;
+    }
+ 
+    @Override
+    public boolean equals(Object obj) {
+        return true;
+    }
+}
+public class HashSetTest {
+    public static void main(String[] args) {
+        HashSet hashSet = new HashSet();
+        hashSet.add(new A());
+        hashSet.add(new A());
+        hashSet.add(new B());
+        hashSet.add(new B());
+        hashSet.add(new C());
+        hashSet.add(new C());
+        for (Object hs : hashSet) {
+            System.out.println(hs);
+        }
+        //HashSet重写了toString()方法
+//        System.out.println(hashSet);
+    }
+}
+cn.edu.uestc.collection.B@1
+cn.edu.uestc.collection.B@1
+cn.edu.uestc.collection.C@2
+cn.edu.uestc.collection.A@3f84246a
+cn.edu.uestc.collection.A@18a9fa9c
+Process finished with exit code 0
+```
 
 
 
+### 27.泛型类型擦除
+
+​	泛型是通过类型擦除来实现的，编译器在编译时擦除了所有类型相关的信息，所以在运行时不存在任何类型相关的信息。例如：List<String> 在运行时仅用一个 List 来表示。这样做的目的，是确保能和 Java 5 之前的版本开发二进制类库进行兼容。
+
+​	List<String> list = new ArrayList<String>();
+
+​	1、两个 String 其实只有第一个起作用，后面一个没什么卵用，只不过 JDK7 才开始支持 List<String>list = new ArrayList<> 这种写法。
+
+​	2、第一个 String 就是告诉编译器，List 中存储的是 String 对象，也就是起类型检查的作用，之后编译器会擦除泛型占位符，以保证兼容以前的代码。
 
 
 
