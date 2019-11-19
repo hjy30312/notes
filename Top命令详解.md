@@ -92,3 +92,64 @@ KiB Swap:  4064252 total,  2789544 free,  1274708 used.   527664 avail Mem
 
 对于内存监控，在top里我们要时刻监控第五行swap交换分区的used，如果这个数值在不断的变化，说明内核在不断进行内存和swap的数据交换，这时真正的内存不够用了。
 
+
+
+### top命令第6行
+
+| 字符    |                             含义                             |
+| ------- | :----------------------------------------------------------: |
+| PID     |                            进程号                            |
+| USER    |                          进程创建者                          |
+| PR      |                          进程优先级                          |
+| NI      |  nice值。越小优先级越高，最小-20，最大20（用户设置最大19）   |
+| VIRT    |        进程使用的虚拟内存总量，单位kb。VIRT=SWAP+RES         |
+| RES     |  进程使用的、未被换出的物理内存大小，单位kb。RES=CODE+DATA   |
+| SHR     |                     共享内存大小，单位kb                     |
+| S       | 进程状态。D=不可中断的睡眠状态 R=运行 S=睡眠 T=跟踪/停止 Z=僵尸进程 |
+| %CPU    |                      进程占用cpu百分比                       |
+| %MEM    |                      进程占用内存百分比                      |
+| TIME+   |                         进程运行时间                         |
+| COMMAND |                           进程名称                           |
+
+### TOP命令 (在进入top后使用)
+
+P：以占据CPU百分比排序
+
+M：以占据内存百分比排序
+
+T：以积累占用CPU时间排序
+
+Q：退出命令
+
+
+
+### 注：
+
+总核数 = 物理CPU个数 * 每颗物理CPU的核数
+
+总逻辑CPU数= 物理CPU个数 * 每颗物理CPU的核数 * 超线程数
+
+```
+# 查看物理CPU个数
+cat /proc/cpuinfo | grep "physical id" | sort | uniq |wc -l
+
+# 查看每个物理CPU中core的个数（即核数）
+cat /proc/cpuinfo | grep "cpu cores" | uniq
+
+# 查看逻辑CPU的个数
+cat /proc/cpuinfo | grep "processor" | wc -l
+
+# 查看内存信息
+cat /proc/meminfo
+```
+
+
+
+
+
+
+
+
+
+
+
