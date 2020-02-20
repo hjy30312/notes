@@ -33,7 +33,7 @@
 
 ### 8.HashMap的size为什么必须是2的整数次方？
 
-​	1. 这样做总是能够保证HashMap的底层数组长度为2的n次方。当length为2的n次方时，h & (length - 1)就相当于对length取模，而且速度比直接去模快得多，这是HashMap在速度上的一个优化。并且每次扩容时都是翻倍。
+	1. 这样做总是能够保证HashMap的底层数组长度为2的n次方。当length为2的n次方时，h & (length - 1)就相当于对length取模，而且速度比直接去模快得多，这是HashMap在速度上的一个优化。并且每次扩容时都是翻倍。   h：为插入元素的hashcode      length：为map的容量大小
 
 ​	2.  
 
