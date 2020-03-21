@@ -153,17 +153,96 @@ public class MyCallable extends Object implements Callable {
 
 ```
 
+### 2. 4种线程池
+
+​	Java里面线程池的顶级接口是**Executor**，但是严格意义上讲Executor并不是一个线程池，而只是一个执行线程的工具。真正的线程池接口是**ExecutorService**。
+
+​	 Java通过Executors提供了四种线程池， 这四种线程池都基于一个类（ThreadPoolExecutor）的构造函数实现的：
+
+```java
+public ThreadPoolExecutor(int corePoolSize,
+                              int maximumPoolSize,
+                              long keepAliveTime,
+                              TimeUnit unit,
+                              BlockingQueue<Runnable> workQueue,
+                              ThreadFactory threadFactory,
+                              RejectedExecutionHandler handler) {
+        // ...初始化
+    }
+```
+其参数列表如下：
+
+| 名称            | 类型                     | 含义                                       |
+| --------------- | ------------------------ | ------------------------------------------ |
+| corePoolSize    | int                      | 核心线程池数量                             |
+| maximumPoolSize | int                      | 最大线程池数量                             |
+| keepAliveTime   | long                     | 线程最大空闲时间（非核心线程闲置超时时长） |
+| unit            | TimeUnit                 | 时间单位                                   |
+| workQueue       | BlockingQueue<Runnable>  | 线程等待队列                               |
+| threadFactory   | ThreadFactory            | 线程创建工厂                               |
+| handler         | RejectedExecutionHandler | 拒绝策略                                   |
 
 
 
+![11183270-a01aea078d7f4178](C:\Users\54336\Desktop\11183270-a01aea078d7f4178.webp)
+
+​													             线程任务处理流程
 
 
 
+#### 2.1 CachedThreadPool()
 
+​	可缓存线程池，优点如下：
 
+  1. 线程池无限制
 
+  2.  有空闲线程则复用空闲线程，若无空闲线程则新建线程 
 
+  3.  一定程序减少频繁创建/销毁线程，减少系统开销 
 
+     ```java
+     	/**
+          * Creates a thread pool that creates new threads as needed, but
+          * will reuse previously constructed threads when they are
+          * available.
+          * 创建一个根据需要创建新线程的线程池 
+          */
+         public static ExecutorService newCachedThreadPool() {
+             return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                           60L, TimeUnit.SECONDS,
+                                           new SynchronousQueue<Runnable>());
+         }
+     ```
+
+     SynchronousQueue： 是无缓冲等待队列，是一个不存储元素的阻塞队列，会直接将任务交给消费者，必须等队列中的添加元素被消费后才能继续添加新的元素。 
+
+     
+
+     #### 2.2 FixedThreadPool（）
+
+     ​	定长线程池，优点如下：
+
+       1. 可控制线程的最大并发数
+
+       2. 超出的线程会在队列中等待
+
+		 ```java
+          	/**
+               * Creates a thread pool that reuses a fixed number of threads
+               * operating off a shared unbounded queue.  
+               */
+              public static ExecutorService newFixedThreadPool(int nThreads) {
+                  return new ThreadPoolExecutor(nThreads, nThreads,
+                                                0L, TimeUnit.MILLISECONDS,
+                                                new LinkedBlockingQueue<Runnable>());
+              }
+          ```
+
+          LinkedBlockingQueue：
+
+          ​		
+
+     ​	
 
 
 
