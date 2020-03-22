@@ -2,7 +2,7 @@
 
 ### 1. Java线程实现/创建方式
 
-	#### 1.1 继承Thread类
+#### 1.1 继承Thread类
 
 ​	Thread类本质上是实现了Runnable接口的一个实例，代表一个线程的实例。启动线程的唯一方法就是通过Thread类的start()实例方法。 **start()方法是一个native方法**，它将启动一个新线程，并执行run方法。
 
@@ -192,7 +192,7 @@ public ThreadPoolExecutor(int corePoolSize,
 
 #### 2.1 CachedThreadPool()
 
-​	可缓存线程池，优点如下：
+可缓存线程池，优点如下：
 
   1. 线程池无限制
 
@@ -216,34 +216,100 @@ public ThreadPoolExecutor(int corePoolSize,
 
      SynchronousQueue： 是无缓冲等待队列，是一个不存储元素的阻塞队列，会直接将任务交给消费者，必须等队列中的添加元素被消费后才能继续添加新的元素。 
 
-     
+#### 2.2 FixedThreadPool（）
 
-     #### 2.2 FixedThreadPool（）
+定长线程池，优点如下：
 
-     ​	定长线程池，优点如下：
+   1. 可控制线程的最大并发数
 
-       1. 可控制线程的最大并发数
+   2. 超出的线程会在队列中等待
 
-       2. 超出的线程会在队列中等待
+      ```java
+      /**
+        * Creates a thread pool that reuses a fixed number of threads
+        * operating off a shared unbounded queue.  
+        */
+        public static ExecutorService newFixedThreadPool(int nThreads) {
+             return new ThreadPoolExecutor(nThreads, nThreads,
+                                         0L, TimeUnit.MILLISECONDS,
+                                          new LinkedBlockingQueue<Runnable>());
+        }
+      ```
 
-		 ```java
-          	/**
-               * Creates a thread pool that reuses a fixed number of threads
-               * operating off a shared unbounded queue.  
-               */
-              public static ExecutorService newFixedThreadPool(int nThreads) {
-                  return new ThreadPoolExecutor(nThreads, nThreads,
-                                                0L, TimeUnit.MILLISECONDS,
-                                                new LinkedBlockingQueue<Runnable>());
-              }
-          ```
+      LinkedBlockingQueue：基于链表的先进先出队列，无界。
 
-          LinkedBlockingQueue：
 
-          ​		
 
-     ​	
+#### 2.3 newScheduledThreadPool（）
 
+ 调度线程池
+
+```java
+
+ 	/**
+      * Creates a thread pool that can schedule commands to run after a
+      * given delay, or to execute periodically.
+      * 创建一个线程池，该线程池可以计划在
+      * 给定的延迟，或周期性地执行。
+      */
+     public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) {
+         return new ScheduledThreadPoolExecutor(corePoolSize);
+     }
+```
+
+
+#### 2.4  newSingleThreadExecutor（）
+
+单例线程池。优点：
+
+​    1. 始终都由一个线程来执行
+
+​	2. 保证所有任务按顺序完成
+```java
+ 
+ 	 /**
+      * Creates an Executor that uses a single worker thread operating
+      * off an unbounded queue. 
+      * 创建从无限的队列中使用单个工作线程操作的执行器。
+      */
+     public static ExecutorService newSingleThreadExecutor() {
+         return new FinalizableDelegatedExecutorService
+             (new ThreadPoolExecutor(1, 1,
+                                     0L, TimeUnit.MILLISECONDS,
+                                     new LinkedBlockingQueue<Runnable>()));
+     }
+ 
+```
+
+### 3. 线程生命周期（状态）
+
+#### 3.1 新建状态（NEW）
+
+​		当程序使用<font color="red">new关键字创建了一个线程之后</font>>，该线程就处于新建状态，此时仅由JVM为其分配内存，并初始化其成员变量的值
+
+#### 3.2就绪状态（RUNNABLE）
+
+​		当线程对象<font color="red">调用了start()方法之后</font>，该线程处于就绪状态。JVM会为其创建方法调用栈和程序计数器，等待调度运行。
+
+#### 3.3 运行状态（RUNNING）
+
+​		如果处于<font color="red">就绪状态的线程获得了CPU，开始执行run()方法的线程执行体</font>，则该线程处于运行状态。
+
+#### 3.4 阻塞状态（BLOCKED）
+
+​		阻塞状态是指线程因为某种原因放弃了cpu的使用权，也即让出了cpu timeslice，暂时停止运行。直到线程进入可运行状态，才有机会再次获得cpu timesslice 转到运行(running)状态。阻塞的情况分三种：
+
+	1. 等待阻塞（o.wait -> 等待队列）：运行(running)的线程执行 o.wait()方法，JVM 会把该线程放入等待队列(waitting queue)中。
+ 	2. 同步阻塞 (lock-> 锁池 )：运行(running)的线程在获取对象的同步锁时，<font color="red">若该同步锁被别的线程占用</font>，则 JVM 会把该线程放入锁池(lock pool)中。
+ 	3. 其他阻塞 (sleep/join)：运行(running)的线程执行 Thread.sleep(long ms)或 t.join()方法，或者发出了 I/O 请求时，JVM 会把该线程置为阻塞状态。当 sleep()状态超时、join()等待线程终止或者超时、或者 I/O处理完毕时，线程重新转入可运行(runnable)状态。
+
+#### 3.5 线程死亡（DEAD）
+
+​		线程会以下面三种方式结束，结束后就是死亡状态。
+
+	1. 正常结束：run()或call()方法执行完成，线程正常结束。
+ 	2. 异常结束：线程抛出一个未捕获Exception或Error
+ 	3. 调用stop：直接调用该线程的 stop()方法来结束该线程—该方法通常容易导致死锁，不推荐使用。
 
 
 
