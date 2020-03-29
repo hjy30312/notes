@@ -172,19 +172,17 @@ public ThreadPoolExecutor(int corePoolSize,
 ```
 其参数列表如下：
 
-| 名称            | 类型                     | 含义                                       |
-| --------------- | ------------------------ | ------------------------------------------ |
-| corePoolSize    | int                      | 核心线程池数量                             |
-| maximumPoolSize | int                      | 最大线程池数量                             |
-| keepAliveTime   | long                     | 线程最大空闲时间（非核心线程闲置超时时长） |
-| unit            | TimeUnit                 | 时间单位                                   |
-| workQueue       | BlockingQueue<Runnable>  | 线程等待队列                               |
-| threadFactory   | ThreadFactory            | 线程创建工厂                               |
-| handler         | RejectedExecutionHandler | 拒绝策略                                   |
+| 名称            | 类型                     | 含义                                                         |
+| --------------- | ------------------------ | ------------------------------------------------------------ |
+| corePoolSize    | int                      | 核心线程池数量                                               |
+| maximumPoolSize | int                      | 最大线程池数量                                               |
+| keepAliveTime   | long                     | 当前线程池数量超过 corePoolSize 时，多余的空闲线程的存活时间。 |
+| unit            | TimeUnit                 | 时间单位                                                     |
+| workQueue       | BlockingQueue<Runnable>  | 任务队列，被提交但尚未被执行的任务。                         |
+| threadFactory   | ThreadFactory            | 线程创建工厂                                                 |
+| handler         | RejectedExecutionHandler | 拒绝策略，当任务太多来不及处理，如何拒绝任务。               |
 
-
-
-![11183270-a01aea078d7f4178](C:\Users\54336\Desktop\11183270-a01aea078d7f4178.webp)
+![]()
 
 ​													             线程任务处理流程
 
@@ -287,11 +285,11 @@ public ThreadPoolExecutor(int corePoolSize,
 
 ​		当程序使用<font color="red">new关键字创建了一个线程之后</font>>，该线程就处于新建状态，此时仅由JVM为其分配内存，并初始化其成员变量的值
 
-#### 3.2就绪状态（RUNNABLE）
+#### 3.2 就绪状态（RUNNABLE）
 
 ​		当线程对象<font color="red">调用了start()方法之后</font>，该线程处于就绪状态。JVM会为其创建方法调用栈和程序计数器，等待调度运行。
 
-#### 3.3 运行状态（RUNNING）
+#### 3.3  运行状态（RUNNING）
 
 ​		如果处于<font color="red">就绪状态的线程获得了CPU，开始执行run()方法的线程执行体</font>，则该线程处于运行状态。
 
@@ -307,11 +305,128 @@ public ThreadPoolExecutor(int corePoolSize,
 
 ​		线程会以下面三种方式结束，结束后就是死亡状态。
 
-	1. 正常结束：run()或call()方法执行完成，线程正常结束。
- 	2. 异常结束：线程抛出一个未捕获Exception或Error
- 	3. 调用stop：直接调用该线程的 stop()方法来结束该线程—该方法通常容易导致死锁，不推荐使用。
+1.  正常结束：run()或call()方法执行完成，线程正常结束。
+
+ 	2.  异常结束：线程抛出一个未捕获Exception或Error
+ 	3.  调用stop：直接调用该线程的 stop()方法来结束该线程—该方法通常容易导致死锁，不推荐使用。
 
 
+
+### 4. sleep与wait的区别
+
+	1.  对于sleep()方法，该方法是属于Thread类中的。而wait()方法，则是属于Object类中的。
+ 	2.  sleep()方法让当前线程暂停指定的时间，让出cpu给其他线程，但<font color="red">他的监控状态依然保持着</font> ,当指定的时间到了就会自动恢复运行状态。
+ 	3. 在调用sleep()方法的过程中，<font color="red">线程不会释放对象锁</font>。
+ 	4. 而当<font color="red">调用wait()方法的时候，线程会放弃对象锁</font>，进入等待此对象的<font color="red">等待锁定池</font>，只有针对此对象调用notify()方法后本线程才进入对象锁定池准备获取对象锁进入运行状态。
+
+### 5.  start 与 run的区别
+
+	1. start() 方法启动线程，真正实现了多线程运行。这时无需等待run方法执行完毕，可以直接继续执行下面的代码。
+ 	2. 通过调用 Thread 类的 start()方法来启动一个线程， 这时此线程是处于就绪状态， 并没有运行。
+ 	3. 方法 run()称为线程体，它包含了要执行的这个线程的内容，线程就进入了运行状态，开始运行 run 函数当中的代码。 Run 方法运行结束， 此线程终止。然后 CPU 再调度其它线程。
+ 	4. start()是线程的启动者，run()是线程任务的运行者。
+
+```java
+public class Test {
+
+    public static void main(String[] args) {
+        RunnableThread runnableThread = new RunnableThread();
+        // 情况一
+        runnableThread.run();
+        runnableThread.run();
+        // 情况二
+//        new Thread(runnableThread).start();
+//        new Thread(runnableThread).start();
+    }
+}
+
+class RunnableThread implements Runnable{
+
+    private int count = 5;
+    @Override
+    public void run() {
+        while (count > 0) {
+            System.out.println(Thread.currentThread().getName() + "====" + count);
+            count--;
+        }
+    }
+}
+// 注释情况2   情况1输出
+main====5
+main====4
+main====3
+main====2
+main====1
+// 注释情况1   情况2输出   
+Thread-1====5
+Thread-0====5
+Thread-0====3
+Thread-0====2
+Thread-1====4
+Thread-0====1
+    
+```
+
+
+
+### 6. Java锁
+
+#### 6.1 乐观锁
+
+​	乐观锁是一种乐观思想，即认为读多写少，遇到并发写的可能性低，每次去拿数据的时候都认为别人不会修改，所以不会上锁，但是<font color="red">在更新的时候回判断一下在此期间别人有没有去更新这个数据，采取在写时先读出当前版本号，然后加锁操作</font>（ 比较跟上一次的版本号，如果一样则更新），如果失败则要重复读-比较-写的操作。
+
+​	java 中的乐观锁基本都是通过 CAS 操作实现的，CAS 是一种更新的原子操作，<font color="red">比较当前值跟传入值是否一样，一样则更新，否则失败。</font>
+
+##### 6.2 悲观锁
+
+​	悲观锁是就是悲观思想，即认为写多，遇到并发写的可能性高，每次去拿数据的时候都认为别人会修改，所以每次在读写数据的时候都会上锁，这样别人想读写这个数据就会block直到拿到锁。java中的悲观锁就是<font color="red">Synchronized</font>,AQS框架下的锁则是先尝试cas乐观锁去获取锁，获取不到，才会转换为悲观锁，如 RetreenLock。
+
+##### 6.3 自旋锁
+
+​	<font color="red">如果持有锁的线程能够在很短时间内释放锁资源，那么那些等待竞争锁的线程就不需要做内核态和用户态之间的切换进入阻塞挂起状态，它们只需要等一等（自旋），等持有锁的线程释放锁后即可立刻获取锁，这样就避免用户线程和内核的切换的消耗。</font>
+
+​	线程自旋是需要消耗 cup 的，说白了就是让 cup 在做无用功，如果一直获取不到锁，那线程也不能一直占用 cup 自旋做无用功，所以需要设定一个自旋等待的最大时间。
+
+​	如果持有锁的线程执行的时间超过自旋等待的最大时间扔没有释放锁，就会导致其它争用锁的线程在最大等待时间内还是获取不到锁，这时争用线程会停止自旋进入阻塞状态。
+
+##### 6.4 Synchronized同步锁
+
+​	synchronized它可以把任意一个非NULL的对象当做锁。<font color="red">他属于独占式的悲观锁同时属于可重入锁</font>。
+
+###### Synchronized作用范围
+
+		1.  作用于方法时，锁住的是对象的实例(this)；
+  		2.  当作用于静态方法时，锁住的是Class实例，又因为Class的相关数据存储在永久带PermGen
+        （jdk1.8 则是 metaspace），永久带是全局共享的，因此静态方法锁相当于类的一个全局锁，
+        会锁所有调用该方法的线程。
+  		3.  synchronized 作用于一个对象实例时，锁住的是所有以该对象为锁的代码块。它有多个队列，当多线程一起访问某个对象监视器的时候，对象监视器会将这些线程存储在不同的容器中。
+
+###### Synchronized核心组件
+
+- Wait Set：那些调用wait方法被阻塞的线程被放置在这里；
+
+- Contention List: 竞争队列，所有请求锁的线程首先被放在这个竞争队列中；
+
+- Entry List：Contention List 中那些<font color="red">有资格成为候选资源的线程被移动到Entry List 中</font>
+- OnDeck：任意时刻，<font color="red">最多只有一个线程正在竞争锁资源，该线程被成为 OnDeck；</font>
+- Owner：当前以获取到锁资源的线程被称为Owner；
+- ！Owner：当前释放锁的线程；
+
+###### Synchronized实现
+
+1. JVM每次从队列的尾部取出一个数据用于锁竞争候选者（OnDeck）,但是并发情况下，ContentionList会被大量的并发线程进行CAS访问，为了降低对尾部元素的竞争，JVM会将一部分线程移动到EntryList中作为候选竞争线程。
+2. Owner线程会在unlock时，将ContentionList中的部分线程迁移到EntryList中，并指定EntryList中的某个线程为OnDeck线程。
+3. Owner 线程并不直接把锁传递给 OnDeck 线程，而是把锁竞争的权利交给 OnDeck，OnDeck需要重新竞争锁。这样虽然牺牲了一些公平性，但是能极大的提升系统的吞吐量，在JVM 中，也把这种选择行为称之为“竞争切换”。
+4. OnDeck线程获取到锁资源后会变为Owner线程，而没有得到锁资源的仍然停留在EntryList中。如果Owner线程被wait方法阻塞，则转移到WaitSet队列中，直到某个时刻通过notify或者 notifyAll 唤醒，会重新进去EntryList 中。
+5. 处于ContentionList、EntryList、WaitSet中的线程都处于阻塞状态，该阻塞是由操作系统来完成的（Linux 内核下采用 pthread_mutex_lock 内核函数实现的）。
+6. Synchronized是非公平锁。 Synchronized在线程进入ContentionList时，<font color="red">等待的线程会先尝试自旋获取锁，如果获取不到就进入 ContentionList</font>，这明显对于已经进入队列的线程是不公平的，还有一个不公平的事情就是自旋获取锁的线程还可能直接抢占 OnDeck 线程的锁资源。
+7. 每个对象都有个 monitor 对象，<font color="red">加锁就是在竞争 monitor 对象</font>，代码块加锁是在前后分别加上 monitorenter 和 monitorexit 指令来实现的，方法加锁是通过一个标记位来判断的。
+8. synchronized<font color="red"> 是一个重量级操作，需要调用操作系统相关接口</font>，性能是低效的，有可能给线
+   程加锁消耗的时间比有用操作消耗的时间更多。
+9. Java1.6，synchronized 进行了很多的优化，有适应自旋、锁消除、锁粗化、轻量级锁及偏向锁等，效率有了本质上的提高。在之后推出的 Java1.7 与 1.8 中，均对该关键字的实现机理做了优化。引入了偏向锁和轻量级锁。都是在对象头中有标记位，不需要经过操作系统加锁。
+10. 锁可以从偏向锁升级到轻量级锁，再升级到重量级锁。这种升级过程叫做锁膨胀；
+
+##### 
 
 
 
