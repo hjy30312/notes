@@ -399,7 +399,7 @@ Thread-0====1
   		2.  当作用于静态方法时，锁住的是Class实例，又因为Class的相关数据存储在永久带PermGen
         （jdk1.8 则是 metaspace），永久带是全局共享的，因此静态方法锁相当于类的一个全局锁，
         会锁所有调用该方法的线程。
-    		3.  synchronized 作用于一个对象实例时，锁住的是所有以该对象为锁的代码块。它有多个队列，当多线程一起访问某个对象监视器的时候，对象监视器会将这些线程存储在不同的容器中。
+        		3.  synchronized 作用于一个对象实例时，锁住的是所有以该对象为锁的代码块。它有多个队列，当多线程一起访问某个对象监视器的时候，对象监视器会将这些线程存储在不同的容器中。
 
 ###### Synchronized核心组件
 
@@ -452,25 +452,151 @@ Thread-0====1
 
 ​	中断一个线程，其本意是**给这个线程一个通知信号，会影响这个线程内部的一个中断标识位。这个线程本身并不会因此而改变状态（如：阻塞，终止等）。**
 
+ 1. **调用Interrupt()方法并不会中断一个正在运行的线程**。也就是说处于Running状态的线程并不会因为被中断而被中断而被终止，仅仅改变了内部维护的中断标识位而已。
+
+ 2. 若调用sleep()而使线程处于TIMED-WATING状态，这是调用interrupt()方法，会抛出InterruptedExecption，从而使线程提前结束TIMED-WATING状态。
+
+ 3. 许多声明抛出 InterruptedException 的方法(如 Thread.sleep(long mills 方法))，抛出异常前，都会清除中断标识位，所以抛出异常后，调用 isInterrupted()方法将会返回 false。
+
+ 4. 中断状态是线程固有的一个标识位，可以通过此标识位安全的终止线程。比如,你想终止一个线程thread的时候，可以调用thread.interrupt()方法，在线程的run方法内部可以根据 <font color="red">thread.isInterrupted()的值来优雅的终止线程。</font>
+
+    ```java
+    public class ThreadA extends Thread{
+        int count=0;
+    
+        @Override
+        public void run(){
+            System.out.println(getName()+"将要运行...");
+            while(!this.isInterrupted()){
+                System.out.println(getName()+"运行中"+count++);
+                try{
+                    Thread.sleep(4000);
+                }catch(InterruptedException e){
+                    System.out.println(getName()+"从阻塞中退出...");
+                    // 抛出异常后恢复中断标识位
+                    System.out.println("this.isInterrupted()="+this.isInterrupted());
+    
+                }
+            }
+            System.out.println(getName()+"已经终止!");
+        }
+    }
+    
+    public class ThreadDemo{
+    
+        public static void main(String argv[])throws InterruptedException{
+            ThreadA ta=new ThreadA();
+            ta.setName("ThreadA");
+            ta.start();
+            Thread.sleep(2000);
+            System.out.println(ta.getName()+"正在被中断...");
+            ta.interrupt();
+            System.out.println("ta.isInterrupted()="+ta.isInterrupted());
+        }
+    }
+    运行：
+    ThreadA将要运行...
+    ThreadA运行中0
+    ThreadA正在被中断...
+    ta.isInterrupted()=true
+    ThreadA从阻塞中退出...
+    this.isInterrupted()=false
+    ThreadA运行中1
+    ThreadA运行中2
+    ```
+
+    
+
+##### 7.5 Join等待其他线程终止
+
+​	<font color="red">join()方法，等待其他线程终止</font>，在当前线程中调用一个线程的join()方法，则当前线程转为阻塞状态，回到另一个线程结束，当前线程再由阻塞状态变为就绪状态，等待cpu的选择。
+
+##### 7.6 为什么要用join()方法？
+
+​	很多情况下，主线程生成并启动了子线程，需要用到子线程返回的结果，也就是需要主线程需要在子线程结束后再结束，这时候就要用到join()方法。
+
+```java
+public class ThreadA extends Thread{
+    int count=0;
+
+    @Override
+    public void run(){
+        System.out.println(getName()+"将要运行...");
+        System.out.println(getName()+"运行中");
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(getName()+"运行结束");
+    }
+}
+
+public class ThreadDemo{
+
+    public static void main(String argv[])throws InterruptedException{
+        ThreadA threadA = new ThreadA();
+        System.out.println(Thread.currentThread().getName() + "线程运行开始!");
+        threadA.setName("ThreadA");
+        threadA.start();
+        System.out.println("join()前");
+        threadA.join();
+        System.out.println("这时 threadA 执行完毕之后才能执行主线程");
+    }
+}
+运行：
+main线程运行开始!
+join()前
+ThreadA将要运行...
+ThreadA运行中
+ThreadA运行结束
+这时 threadA 执行完毕之后才能执行主线程
+
+```
+
+##### 7.7 线程唤醒（notify）
+
+​	Object 类中的 notify() 方法，唤醒在此对象监视器上等待的单个线程，如果所有线程都在此对象上等待，则会选择唤醒其中一个线程，选择是任意的，并在对实现做出决定时发生，线程通过调用其中一个 wait() 方法，在对象的监视器上等待，直到当前的线程放弃此对象上的锁定，才能继续执行被唤醒的线程，被唤醒的线程将以常规方式与在该对象上主动同步的其他所有线程进行竞争。类似的方法还有 notifyAll() ，唤醒再次监视器上等待的所有线程。
 
 
 
+## 8. Netty 与 RPC
+
+### 8.1. Netty 原理
+
+​	Netty是一个高性能、异步事件驱动的NIO框架，基于JAVA NIO提供的API实现。它提供了对TCP、UDP和文件传输的支持，作为一个异步NIO框架，Netty的所有IO操作都是异步非阻塞的，**通过Future-Listener机制，用户可以方便的主动获取或者通过通知机制获得IO操作结果。**
+
+### 8.2. Netty高性能
+
+​	在IO编程过程中，当需要同时处理多个客户端接入请求时，可以利用多线程或者IO多路复用技术进行处理。IO多路复用技术通过把多个IO的阻塞复用到同一个select的阻塞上，从而使得系统在单线程的情况下可以同时处理多个客户端请求。与传统的多线程/多进程模型比，I/O多路复用的最大优势是系统开销小，系统不需要创建新的额外进程或者线程，也不需要维护这些进程和线程的运行，降低了系统的维护工作量，节省了系统资源。
+
+​	与Socket类和ServerSocket类相对应，NIO也提供了SocketChannel和ServerSocketCannel两种不同的套接字实现。
+
+#### 8.2.1 多路复用通讯方式
+
+```sequence
+Nio Client->Noi Client：打开SocketChannel
+
+
+```
 
 
 
+#### 8.2.2. 异步通讯NIO
+
+​	<font color="red">由于Netty采用了异步通信模式，一个IO线程可以并发处理N个客户端连接的读写操作，</font>这从根本上解决了传统异步阻塞IO一连接一线程模型，架构的性能、弹性伸缩能力和可靠性都得到了极大的提升。
 
 
 
+#### 8.2.3 零拷贝 (DIRECT BUFFERS 使用堆外直接内存)
 
+ 1. <font color="red">Netty的接收和发送ByteBuffer采用DIRECT BUFFERS，使用堆外直接内存进行Socket读写，不需要进行字节缓冲区的二次拷贝。</font>如果使用传统的堆内存（HEAP BUFFERS）进行Socket读写，JVM会将堆内存Buffer拷贝一份到直接内存中，然后才写入Socket中。相比于堆外直接内存，消息在发送过程中多了一次缓冲区的内存拷贝。
 
+ 2. <font color="red">Netty提供了组合Buffe对象，可以聚合多个ByteBuffer对象，用户可以像操作一个Buffer那样方便的对组合Buffer进行操作，避免了传统通过内存拷贝的方式将几个小Buffer合并成一个大的Buffer。</font>
 
+ 3. Netty的文件传输采用了<font color="red">transferTo方法</font>，它可以直接将文件缓冲区的数据发送到目标Channel，避免了传统通过循环write方式导致的内存拷贝问题。
 
-
-
-
-
-
-
+    
 
 
 
