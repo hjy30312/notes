@@ -73,10 +73,10 @@ set与list的区别在于set是可以自动排重的。可以基于set实现交�
 
 ### 过期策略
 
-过期建是保存在哈希表中的。那些过期键到了过期的时间就会立马被删除掉吗？过期策略主要分为三种：
+过期键是保存在哈希表中的。那些过期键到了过期的时间就会立马被删除掉吗？过期策略主要分为三种：
 
 - 定时删除（对内存友好，对CPU不友好）
-  - 到时间点把所有过期的建删除了
+  - 到时间点把所有过期的键删除了
 - 惰性产生（对CPU极度友好，对内存极度不友好）
   - 每次从键空间取键的时候，判断该键是否过期了，如果过期了就删除。
 - 定期删除（折中）
@@ -147,7 +147,52 @@ Codis是无状态的，只是一个转发代理中间件。所以我们可以启
 
 方案简单，将分布式的问题交给了第三方（zookeeper或etcd）去负责，内部实现相对Redis Cluster的简单。
 
-#### 
+### 众志成城-Cluster
+
+Redis提供的集群化方案。集群由x个节点组成，每个节点负责整个集群的一部分数据。这x个节点相互连接组成一个对等的集群，它们之间通过一种特殊的二进制协议交互集群信息。
+
+
+
+## 扩展
+
+### Info指令
+
+Info指令显示的信息繁多，分为9大块，这九大块如下：
+
+1. Server ： 服务器运行的环境参数
+2. Clients： 客户端相关信息
+3. Memory：服务器运行内存统计数据
+4. Persistence：持久化信息
+5. Stats：通用统计信息
+6. Replication：主从复制相关信息
+7. CPU：CPU使用情况
+8. Cluster：集群信息
+9. KeySpace：键值对统计数量信息
+
+#### 每秒执行多少次
+
+```
+ops_per_sec：operations per second 每秒操作数
+redis-cli info stats | grep ops
+operations per second:111
+```
+
+表示客户端每秒发送111条指令到服务器执行。
+
+通过监控   可以查看是哪些数据访问比较高。 `redis-cli monitor`
+
+#### reids内存占用多大
+
+```
+redis-cli info memory | grep used | grep human
+used_memory_human:123k  #内存分配器从操作系统分配的内存总量
+used_memory_rss_human: 3.61M  # 操作系统看到的内存占用，top命令看到的内存
+used_memory_peak_human： 899k   #Redis内存消耗的峰值
+```
+
+
+
+ 
 
 
 
